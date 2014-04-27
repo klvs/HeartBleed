@@ -8,7 +8,9 @@ import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
 
 public class HeartBleed {
-
+	
+	//test
+	
 	private Socket connection;
 	private InputStream inStr;
 	private OutputStream outStr;
