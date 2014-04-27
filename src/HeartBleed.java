@@ -73,6 +73,10 @@ public class HeartBleed {
 		}
 		
 	}
+	public void close() throws IOException{
+		inStr.close();
+		connection.close();
+	}
 	
 	public void save() throws IOException{
 		FileOutputStream out = new FileOutputStream("hbTest.txt", true);
