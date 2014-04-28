@@ -2,9 +2,11 @@ import java.io.IOException;
 
 
 public class hbDriver {
-
+	
+	
+	
 	public static void main(String[] args) {
-		HeartBleed hb = new HeartBleed();
+		
 		
 		hbEvent test = new hbEvent();
 //		try{
